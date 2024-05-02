@@ -9,6 +9,8 @@
         // Play video
         function playVideo(timestamp) {
             socket.emit('play_video', { timestamp: timestamp });
+            // Update iframe src immediately
+            document.getElementById('video-iframe').src = `{{ video_url }}?t=${timestamp}`;
         }
 
         // Send chat message
@@ -25,9 +27,15 @@
         // Receive play video event
         socket.on('play_video', function(data) {
             console.log(`Received play video event: ${data.timestamp}`);
-            // Update iframe src
-            document.getElementById('video-iframe').src = `{{ video_url }}?t=${data.timestamp}`;
+            playVideo(data.timestamp); // Play video from received timestamp
         });
+
+        // Play video on page load
+        playVideo(0);
+
+        // Play video from timestamp 10 on device 1 (your device)
+        playVideo(10); 
+
     </script>
 </head>
 <body>
@@ -36,10 +44,5 @@
     <input id="chat-input" type="text" placeholder="Type a message...">
     <button id="chat-send" onclick="sendMessage(document.getElementById('chat-input').value)">Send</button>
     <div id="chat-log"></div>
-
-    <script>
-        // Play video on page load
-        playVideo(0);
-    </script>
 </body>
 </html>

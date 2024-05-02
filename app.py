@@ -28,7 +28,7 @@ def play_video(data):
     global current_timestamp
     current_timestamp = data['timestamp']
     # Broadcast the new timestamp to all connected clients
-    socketio.emit('play_video', {'timestamp': current_timestamp}, broadcast=True)
+    socketio.emit('play_video', {'timestamp': current_timestamp}, broadcast=True, include_self=False)
 
 @socketio.on('send_message')
 def send_message(data):

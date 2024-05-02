@@ -27,13 +27,14 @@ def disconnect():
 def play_video(data):
     global current_timestamp
     current_timestamp = data['timestamp']
-    emit('play_video', {'timestamp': current_timestamp}, broadcast=True)
+    # Broadcast the new timestamp to all connected clients
+    socketio.emit('play_video', {'timestamp': current_timestamp}, broadcast=True)
 
 @socketio.on('send_message')
 def send_message(data):
     chat_messages.append(data['message'])
-    emit('receive_message', {'message': data['message']}, broadcast=True)
-
+    # Broadcast the new message to all connected clients
+    socketio.emit('receive_message', {'message': data['message']}, broadcast=True)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

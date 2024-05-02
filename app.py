@@ -31,7 +31,17 @@ def disconnect():
 def play_video(data):
     global current_timestamp
     current_timestamp = data['timestamp']
-    emit('play_video', {'timestamp': current_timestamp}, room='watch_together')
+    emit('play_video', {'timestamp': current_timestamp}, room='watch_together', broadcast=True)
+
+@socketio.on('pause_video')
+def pause_video():
+    emit('pause_video', room='watch_together', broadcast=True)
+
+@socketio.on('seek_video')
+def seek_video(data):
+    global current_timestamp
+    current_timestamp = data['timestamp']
+    emit('seek_video', {'timestamp': current_timestamp}, room='watch_together', broadcast=True)
 
 @socketio.on('heartbeat')
 def heartbeat(data):

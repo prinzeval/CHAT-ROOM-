@@ -3,60 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch Together</title>
-    <style>
-        /* Your CSS styles here */
-    </style>
+    <title>Video Sync</title>
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
 </head>
 <body>
-    <h1>Watch Together</h1>
-    <div class="video-container">
-        <video id="videoPlayer" width="640" height="360" controls>
-            <source src="{{ video_url }}" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    </div>
-    <div class="chat-container">
-        <div id="chat-log"></div>
-        <input id="chat-input" type="text" placeholder="Type a message...">
-        <button id="chat-send">Send</button>
-    </div>
+    <video id="video" controls>
+        <source src="https://e5.animeheaven.me/video.mp4?30dbec1968b1dc0c730f6b64e7920003" type="video/mp4">
+    </video>
 
-    <!-- Your JavaScript code here -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
     <script>
         var socket = io();
 
-        // Receive chat message
-        socket.on('receive_message', function(data) {
-            console.log(`Received message: ${data.message}`);
-            document.getElementById('chat-log').innerHTML += `<p>${data.message}</p>`;
+        // Play video
+        socket.on('play', function() {
+            document.getElementById('video').play();
         });
 
-        // Receive play video event
-        socket.on('play_video', function(data) {
-            console.log(`Received play video event: ${data.timestamp}`);
-            document.getElementById('videoPlayer').currentTime = data.timestamp;
-            document.getElementById('videoPlayer').play();
+        // Pause video
+        socket.on('pause', function() {
+            document.getElementById('video').pause();
         });
 
-        // Send chat message
-        document.getElementById('chat-send').addEventListener('click', function() {
-            var message = document.getElementById('chat-input').value;
-            socket.emit('send_message', { message: message });
-            document.getElementById('chat-input').value = '';
+        // Seek video
+        socket.on('seek', function(timestamp) {
+            document.getElementById('video').currentTime = timestamp;
         });
 
-        // Get current video playback timestamp
-        function getVideoCurrentTime() {
-            return document.getElementById('videoPlayer').currentTime;
-        }
+        // Handle user interaction
+        document.getElementById('video').addEventListener('play', function() {
+            socket.emit('play');
+        });
 
-        // Send heartbeat event every 5 seconds
-        setInterval(function() {
-            var currentTimestamp = getVideoCurrentTime();
-            socket.emit('heartbeat', { timestamp: currentTimestamp });
-        }, 5000);
+        document.getElementById('video').addEventListener('pause', function() {
+            socket.emit('pause');
+        });
+
+        document.getElementById('video').addEventListener('seeked', function() {
+            var timestamp = document.getElementById('video').currentTime;
+            socket.emit('seek', timestamp);
+        });
     </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -13,28 +13,30 @@ chat_messages = []
 
 @app.route('/')
 def index():
-    return render_template('u.html', video_url=video_url)
+    return render_template('u.html')
 
 @socketio.on('connect')
 def connect():
     print('Client connected')
+    join_room('watch_together')
 
 @socketio.on('disconnect')
 def disconnect():
     print('Client disconnected')
+    leave_room('watch_together')
 
 @socketio.on('play_video')
 def play_video(data):
     global current_timestamp
     current_timestamp = data['timestamp']
-    # Broadcast the new timestamp to all connected clients
-    socketio.emit('play_video', {'timestamp': current_timestamp}, broadcast=True, include_self=False)
+    # Broadcast the new timestamp to all connected clients in the 'watch_together' room
+    socketio.emit('play_video', {'timestamp': current_timestamp}, room='watch_together')
 
 @socketio.on('send_message')
 def send_message(data):
     chat_messages.append(data['message'])
-    # Broadcast the new message to all connected clients
-    socketio.emit('receive_message', {'message': data['message']}, broadcast=True)
+    # Broadcast the new message to all connected clients in the 'watch_together' room
+    socketio.emit('receive_message', {'message': data['message']}, room='watch_together')
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

@@ -2,20 +2,72 @@
 <html>
 <head>
     <title>Watch Together</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #video-iframe {
+            display: block;
+            margin: 0 auto;
+        }
+
+        #chat-input {
+            display: block;
+            width: 80%;
+            margin: 20px auto;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        #chat-send {
+            display: block;
+            width: 80%;
+            margin: 0 auto;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        #chat-log {
+            width: 80%;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+
+        #chat-log p {
+            margin: 5px 0;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/socket.io@2.3.0/dist/socket.io.js"></script>
     <script>
         var socket = io();
+        var videoUrl = 'https://eplayvid.net/watch/7a45aed06ae8995';
+        var currentTimestamp = 0;
 
-        // Play video
-        function playVideo(timestamp) {
+        // Play video at the same timestamp for all clients
+        function playVideoAtSameTimestamp(timestamp) {
             socket.emit('play_video', { timestamp: timestamp });
             // Update iframe src immediately
-            document.getElementById('video-iframe').src = `{{ video_url }}?t=${timestamp}`;
+            document.getElementById('video-iframe').src = `${videoUrl}?t=${timestamp}`;
         }
 
-        // Send chat message
-        function sendMessage(message) {
-            socket.emit('send_message', { message: message });
+        // Call this function when all clients are ready to start playback
+        function startPlaybackAtSameTime(timestamp) {
+            playVideoAtSameTimestamp(timestamp);
         }
 
         // Receive chat message
@@ -27,22 +79,27 @@
         // Receive play video event
         socket.on('play_video', function(data) {
             console.log(`Received play video event: ${data.timestamp}`);
-            playVideo(data.timestamp); // Play video from received timestamp
+            playVideoAtSameTimestamp(data.timestamp); // Play video from received timestamp
         });
 
         // Play video on page load
-        playVideo(0);
+        document.addEventListener('DOMContentLoaded', function() {
+            startPlaybackAtSameTime(0); // Example: Start playback at timestamp 0 for all clients
+        });
 
-        // Play video from timestamp 10 on device 1 (your device)
-        playVideo(10); 
-
+        // Send chat message
+        document.getElementById('chat-send').addEventListener('click', function() {
+            var message = document.getElementById('chat-input').value;
+            socket.emit('send_message', { message: message });
+            document.getElementById('chat-input').value = '';
+        });
     </script>
 </head>
 <body>
     <h1>Watch Together</h1>
-    <iframe id="video-iframe" width="640" height="480" src="{{ video_url }}" frameborder="0" allowfullscreen></iframe>
+    <iframe id="video-iframe" width="640" height="480" src="" frameborder="0" allowfullscreen></iframe>
     <input id="chat-input" type="text" placeholder="Type a message...">
-    <button id="chat-send" onclick="sendMessage(document.getElementById('chat-input').value)">Send</button>
+    <button id="chat-send">Send</button>
     <div id="chat-log"></div>
 </body>
 </html>

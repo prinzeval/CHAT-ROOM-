@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Watch Together</title>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io@2.3.0/dist/socket.io.js"></script>
+    <script>
+        var socket = io();
+
+        // Play video
+        function playVideo(timestamp) {
+            socket.emit('play_video', { timestamp: timestamp });
+        }
+
+        // Send chat message
+        function sendMessage(message) {
+            socket.emit('send_message', { message: message });
+        }
+
+        // Receive chat message
+        socket.on('receive_message', function(data) {
+            console.log(`Received message: ${data.message}`);
+            document.getElementById('chat-log').innerHTML += `<p>${data.message}</p>`;
+        });
+
+        // Receive play video event
+        socket.on('play_video', function(data) {
+            console.log(`Received play video event: ${data.timestamp}`);
+            // Update iframe src
+            document.getElementById('video-iframe').src = `{{ video_url }}?t=${data.timestamp}`;
+        });
+    </script>
+</head>
+<body>
+    <h1>Watch Together</h1>
+    <iframe id="video-iframe" width="640" height="480" src="{{ video_url }}" frameborder="0" allowfullscreen></iframe>
+    <input id="chat-input" type="text" placeholder="Type a message...">
+    <button id="chat-send" onclick="sendMessage(document.getElementById('chat-input').value)">Send</button>
+    <div id="chat-log"></div>
+
+    <script>
+        // Play video on page load
+        playVideo(0);
+    </script>
+</body>
+</html>

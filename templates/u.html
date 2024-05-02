@@ -1,49 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watch Together</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f2f2f2;
-        }
-
-        h1 {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-       .player-iframe {
-            display: block;
-            margin: 0 auto;
-        }
+        /* Your CSS styles here */
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/socket.io@2.3.0/dist/socket.io.js"></script>
 </head>
 <body>
     <h1>Watch Together</h1>
-    <div class="player-iframe animation">
-        <iframe width="100%" height="100%" allowfullscreen="" webkitallowfullscreen="" mozallowfullscreen="" frameborder="0" src="{{ video_url }}" scrolling="no"></iframe>
+    <div class="video-container">
+        <video id="videoPlayer" width="640" height="360" controls>
+            <source src="{{ video_url }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
     </div>
-    <input id="chat-input" type="text" placeholder="Type a message...">
-    <button id="chat-send">Send</button>
-    <div id="chat-log"></div>
+    <div class="chat-container">
+        <div id="chat-log"></div>
+        <input id="chat-input" type="text" placeholder="Type a message...">
+        <button id="chat-send">Send</button>
+    </div>
 
+    <!-- Your JavaScript code here -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
     <script>
         var socket = io();
-        var video_url = '{{ video_url }}';
-
-        // Play video at the same timestamp for all clients
-        function playVideoAtSameTimestamp(timestamp) {
-            socket.emit('play_video', { timestamp: timestamp });
-        }
-
-        // Call this function when all clients are ready to start playback
-        function startPlaybackAtSameTime(timestamp) {
-            playVideoAtSameTimestamp(timestamp);
-        }
 
         // Receive chat message
         socket.on('receive_message', function(data) {
@@ -54,26 +36,8 @@
         // Receive play video event
         socket.on('play_video', function(data) {
             console.log(`Received play video event: ${data.timestamp}`);
-            document.querySelector('.player-iframe iframe').src = `${video_url}#t=${data.timestamp}`;
-            document.querySelector('.player-iframe iframe').play();
-        });
-
-        // Receive pause video event
-        socket.on('pause_video', function() {
-            console.log('Received pause video event');
-            document.querySelector('.player-iframe iframe').pause();
-        });
-
-        // Receive seek video event
-        socket.on('seek_video', function(data) {
-            console.log(`Received seek video event: ${data.timestamp}`);
-            document.querySelector('.player-iframe iframe').src = `${video_url}#t=${data.timestamp}`;
-            document.querySelector('.player-iframe iframe').play();
-        });
-
-        // Play video on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            startPlaybackAtSameTime(0); // Example: Start playback at timestamp 0 for all clients
+            document.getElementById('videoPlayer').currentTime = data.timestamp;
+            document.getElementById('videoPlayer').play();
         });
 
         // Send chat message
@@ -83,18 +47,16 @@
             document.getElementById('chat-input').value = '';
         });
 
-        // Send playback state changes to the server
-        document.querySelector('.player-iframe iframe').addEventListener('play', function() {
-            socket.emit('play_video', { timestamp: document.querySelector('.player-iframe iframe').currentTime });
-        });
+        // Get current video playback timestamp
+        function getVideoCurrentTime() {
+            return document.getElementById('videoPlayer').currentTime;
+        }
 
-        document.querySelector('.player-iframe iframe').addEventListener('pause', function() {
-            socket.emit('pause_video');
-        });
-
-        document.querySelector('.player-iframe iframe').addEventListener('seeked', function() {
-            socket.emit('seek_video', { timestamp: document.querySelector('.player-iframe iframe').currentTime });
-        });
+        // Send heartbeat event every 5 seconds
+        setInterval(function() {
+            var currentTimestamp = getVideoCurrentTime();
+            socket.emit('heartbeat', { timestamp: currentTimestamp });
+        }, 5000);
     </script>
 </body>
 </html>

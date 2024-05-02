@@ -20,7 +20,7 @@ def connect():
     print('Client connected')
     join_room('watch_together')
     global current_timestamp
-    emit('play_video', {'timestamp': current_timestamp}, room='watch_together')
+    socketio.emit('play_video', {'timestamp': current_timestamp}, room='watch_together')
 
 @socketio.on('disconnect')
 def disconnect():
@@ -31,29 +31,19 @@ def disconnect():
 def play_video(data):
     global current_timestamp
     current_timestamp = data['timestamp']
-    emit('play_video', {'timestamp': current_timestamp}, room='watch_together', broadcast=True)
-
-@socketio.on('pause_video')
-def pause_video():
-    emit('pause_video', room='watch_together', broadcast=True)
-
-@socketio.on('seek_video')
-def seek_video(data):
-    global current_timestamp
-    current_timestamp = data['timestamp']
-    emit('seek_video', {'timestamp': current_timestamp}, room='watch_together', broadcast=True)
+    socketio.emit('play_video', {'timestamp': current_timestamp}, room='watch_together')
 
 @socketio.on('heartbeat')
 def heartbeat(data):
     global current_timestamp
     client_timestamp = data['timestamp']
     if abs(client_timestamp - current_timestamp) > 5:  # adjust the tolerance value as needed
-        emit('play_video', {'timestamp': current_timestamp}, room='watch_together')
+        socketio.emit('play_video', {'timestamp': current_timestamp}, room='watch_together')
 
 @socketio.on('send_message')
 def send_message(data):
     chat_messages.append(data['message'])
-    emit('receive_message', {'message': data['message']}, room='watch_together')
+    socketio.emit('receive_message', {'message': data['message']}, room='watch_together')
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

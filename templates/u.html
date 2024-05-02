@@ -15,54 +15,18 @@
             margin-top: 20px;
         }
 
-        #video-iframe {
+    .player-iframe {
             display: block;
             margin: 0 auto;
-        }
-
-        #chat-input {
-            display: block;
-            width: 80%;
-            margin: 20px auto;
-            padding: 10px;
-            font-size: 16px;
-        }
-
-        #chat-send {
-            display: block;
-            width: 80%;
-            margin: 0 auto;
-            padding: 10px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
-
-        #chat-log {
-            width: 80%;
-            margin: 20px auto;
-            padding: 10px;
-            background-color: #fff;
-            border-radius: 5px;
-        }
-
-        #chat-log p {
-            margin: 5px 0;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/socket.io@2.3.0/dist/socket.io.js"></script>
     <script>
         var socket = io();
-        var videoUrl = 'https://eplayvid.net/watch/7a45aed06ae8995';
-        var currentTimestamp = 0;
 
         // Play video at the same timestamp for all clients
         function playVideoAtSameTimestamp(timestamp) {
             socket.emit('play_video', { timestamp: timestamp });
-            // Update iframe src immediately
-            document.getElementById('video-iframe').src = `${videoUrl}?t=${timestamp}`;
         }
 
         // Call this function when all clients are ready to start playback
@@ -79,7 +43,7 @@
         // Receive play video event
         socket.on('play_video', function(data) {
             console.log(`Received play video event: ${data.timestamp}`);
-            playVideoAtSameTimestamp(data.timestamp); // Play video from received timestamp
+            document.querySelector('.player-iframe iframe').src = `https://eplayvid.net/watch/7a45aed06ae8995?t=${data.timestamp}`;
         });
 
         // Play video on page load
@@ -93,11 +57,28 @@
             socket.emit('send_message', { message: message });
             document.getElementById('chat-input').value = '';
         });
+
+        // Get current video playback timestamp
+        function getVideoCurrentTime() {
+            var videoElement = document.querySelector('.player-iframe iframe');
+            return videoElement.contentWindow.currentTime;
+        }
+
+        // Send heartbeat event every 5 seconds
+        setInterval(function() {
+            var currentTimestamp = getVideoCurrentTime();
+            socket.emit('heartbeat', { timestamp: currentTimestamp });
+        }, 5000);
     </script>
 </head>
 <body>
     <h1>Watch Together</h1>
-    <iframe id="video-iframe" width="640" height="480" src="" frameborder="0" allowfullscreen></iframe>
+    <div class="player-iframe animation">
+        <script type="text/javascript">
+            document.write(Base64.decode("PGlmcmFtZSB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBhbGxvd2Z1bGxzY3JlZW4gd2Via2l0YWxsb3dmdWxsc2NyZWVuIG1vemFsbG93ZnVsbHNjcmVlbiBmcmFtZWJvcmRlcj0iMCIgc3JjPSJodHRwczovL2VwbGF5dmlkLm5ldC93YXRjaC83YTQ1YWVkMDZhODk5NSIgc2Nyb2xsaW5nPSJubyI+PC9pZnJhbWU+"));
+        </script>
+        <iframe width="100%" height="100%" allowfullscreen="" webkitallowfullscreen="" mozallowfullscreen="" frameborder="0" src="https://eplayvid.net/watch/7a45aed06ae8995" scrolling="no"></iframe>
+    </div>
     <input id="chat-input" type="text" placeholder="Type a message...">
     <button id="chat-send">Send</button>
     <div id="chat-log"></div>

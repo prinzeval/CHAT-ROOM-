@@ -19,6 +19,8 @@ def index():
 def connect():
     print('Client connected')
     join_room('watch_together')
+    global current_timestamp
+    socketio.emit('play_video', {'timestamp': current_timestamp}, room='watch_together')
 
 @socketio.on('disconnect')
 def disconnect():
@@ -29,13 +31,18 @@ def disconnect():
 def play_video(data):
     global current_timestamp
     current_timestamp = data['timestamp']
-    # Broadcast the new timestamp to all connected clients in the 'watch_together' room
     socketio.emit('play_video', {'timestamp': current_timestamp}, room='watch_together')
+
+@socketio.on('heartbeat')
+def heartbeat(data):
+    global current_timestamp
+    client_timestamp = data['timestamp']
+    if abs(client_timestamp - current_timestamp) > 5:  # adjust the tolerance value as needed
+        socketio.emit('play_video', {'timestamp': current_timestamp}, room='watch_together')
 
 @socketio.on('send_message')
 def send_message(data):
     chat_messages.append(data['message'])
-    # Broadcast the new message to all connected clients in the 'watch_together' room
     socketio.emit('receive_message', {'message': data['message']}, room='watch_together')
 
 if __name__ == '__main__':

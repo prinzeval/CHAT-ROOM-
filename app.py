@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request, session, redirect, url_for
 from flask_socketio import join_room, leave_room, send, SocketIO
 import random
+import os
 from string import ascii_uppercase
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "hjhjsdahhds"
-socketio = SocketIO(app)
+app.config["SECRET_KEY"] = "hjhjsdahhds"  # Ideally, you should set this through an environment variable
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 rooms = {}
 
@@ -32,11 +33,11 @@ def home():
         if not name:
             return render_template("home.html", error="Please enter a name.", code=code, name=name)
 
-        if join != False and not code:
+        if join and not code:
             return render_template("home.html", error="Please enter a room code.", code=code, name=name)
         
         room = code
-        if create != False:
+        if create:
             room = generate_unique_code(4)
             rooms[room] = {"members": 0, "messages": []}
         elif code not in rooms:
@@ -71,7 +72,7 @@ def message(data):
     print(f"{session.get('name')} said: {data['data']}")
 
 @socketio.on("connect")
-def connect(auth):
+def connect():
     room = session.get("room")
     name = session.get("name")
     if not room or not name:
@@ -89,16 +90,17 @@ def connect(auth):
 def disconnect():
     room = session.get("room")
     name = session.get("name")
-    leave_room(room)
-
-    if room in rooms:
-        rooms[room]["members"] -= 1
-        if rooms[room]["members"] <= 0:
-            del rooms[room]
-    
-    send({"name": name, "message": "has left the room"}, to=room)
-    print(f"{name} has left the room {room}")
+    if room and name:
+        leave_room(room)
+        send({"name": name, "message": "has left the room"}, to=room)
+        print(f"{name} has left the room {room}")
+        
+        if room in rooms:
+            rooms[room]["members"] -= 1
+            if rooms[room]["members"] <= 0:
+                del rooms[room]
 
 if __name__ == "__main__":
-    # Run the Flask app on port 80 for HTTP
-    socketio.run(app, host='0.0.0.0', port=80)
+    # Use the 'PORT' environment variable from Render or default to 5000 for local development
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host='0.0.0.0', port=port)
